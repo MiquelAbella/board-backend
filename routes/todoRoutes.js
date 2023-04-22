@@ -5,12 +5,13 @@ const {
   deleteTodo,
   updateTodo,
 } = require("../controllers/todoControllers");
+const checkJWT = require("../middlewares/checkJWT");
 
 const router = express.Router();
 
-router.post("/", createTodo);
-router.post("/updatestatus", updateTodoStatus);
-router.post("/delete", deleteTodo);
-router.post("/update", updateTodo);
+router.post("/", checkJWT, createTodo);
+router.post("/updatestatus", checkJWT, updateTodoStatus);
+router.post("/delete", checkJWT, deleteTodo);
+router.post("/update", checkJWT, updateTodo);
 
 module.exports = router;

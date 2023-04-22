@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
+const generateJWT = require("../helpers/generateJWT");
 
 const createUser = async (req, res) => {
   const { user } = req.body;
@@ -34,10 +35,49 @@ const createUser = async (req, res) => {
       todos: [],
     });
     await newUser.save();
-    const { userId, todos } = newUser;
+    const { userId, todos, _id } = newUser;
+    const token = await generateJWT(_id);
     return res
       .status(200)
-      .json({ ok: true, user: { email, fullName, userId, todos } });
+      .json({ ok: true, user: { email, fullName, userId, todos, _id, token } });
+  } catch (error) {
+    console.log(error);
+    return res.status(503).json({
+      ok: false,
+      msg: "Something happened",
+    });
+  }
+};
+
+const createGoogleUser = async (req, res) => {
+  const { user } = req.body;
+  const { email, fullName } = user;
+
+  try {
+    const user = await User.findOne({ email: email });
+
+    if (user) {
+      return res.status(400).json({
+        ok: false,
+        msg: "User already exists",
+      });
+    }
+
+    const newUser = new User({
+      email,
+      fullName,
+      userId: uuidv4(),
+      todos: [],
+    });
+
+    await newUser.save();
+
+    const { userId, todos, _id } = newUser;
+    console.log(newUser)
+    const token = await generateJWT(_id);
+    return res
+      .status(200)
+      .json({ ok: true, user: { email, fullName, userId, todos, _id, token } });
   } catch (error) {
     console.log(error);
     res.status(503).json({
@@ -48,14 +88,13 @@ const createUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-  const { email, password } = req.body.user;
+  const { email: loginEmail, password } = req.body.user;
 
   try {
-    const user = await User.findOne({ email: email }).populate("todos");
-    console.log(user);
+    const user = await User.findOne({ email: loginEmail }).populate("todos");
 
     if (!user) {
-      res.status(503).json({
+      return res.status(503).json({
         ok: false,
         msg: "User and password do not match",
       });
@@ -64,23 +103,54 @@ const loginUser = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
 
     if (!match) {
-      res.status(503).json({
+      return res.status(503).json({
         ok: false,
         msg: "User and password do not match",
       });
     }
 
-    res.status(200).json({
+    const token = await generateJWT(user._id);
+
+    const { email, fullName, userId, todos, _id } = user;
+
+    return res.status(200).json({
       ok: true,
-      user,
+      user: { email, fullName, userId, todos, _id, token },
     });
   } catch (error) {
-    console.log(error)
-    res.status(503).json({
+    console.log(error);
+    return res.status(503).json({
+      ok: false,
+      msg: "Something happened",
+    });
+  }
+};
+const loginGoogleUser = async (req, res) => {
+  const loginEmail = req.body.user;
+
+  try {
+    const user = await User.findOne({ email: loginEmail }).populate("todos");
+
+    if (!user) {
+      return res.status(503).json({
+        ok: false,
+        msg: "User and password do not match",
+      });
+    }
+
+    const { email, fullName, todos, _id } = user;
+    const token = await generateJWT(_id);
+    return res.status(200).json({
+      ok: true,
+      user: { email, fullName, todos, _id, token },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(503).json({
       ok: false,
       msg: "Something happened",
     });
   }
 };
 
-module.exports = { createUser, loginUser };
+module.exports = { createUser, loginUser, createGoogleUser, loginGoogleUser };
