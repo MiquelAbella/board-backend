@@ -73,7 +73,6 @@ const createGoogleUser = async (req, res) => {
     await newUser.save();
 
     const { userId, todos, _id } = newUser;
-    console.log(newUser)
     const token = await generateJWT(_id);
     return res
       .status(200)
