@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+require("dotenv").config();
 
 const checkJWT = async (req, res, next) => {
   const token = req.headers["x-token"];
@@ -12,7 +13,7 @@ const checkJWT = async (req, res, next) => {
   }
 
   try {
-    const { id } = jwt.verify(token, "makejdh38dh38hfjksjdh");
+    const { id } = jwt.verify(token, process.env.TOKEN_SECRET);
     console.log(id);
     const user = await User.findById(id);
 
