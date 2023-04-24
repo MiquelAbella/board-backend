@@ -20,8 +20,10 @@ Start the server
 ```bash
   npm start
 ```
-You have to create a.env file in the root folder with these variables
+You have to create a.env file in the root folder with these variables:
 
 PORT=4000
+
 DB_CNN='url pointing to a db created in mongodb'
+
 TOKEN_SECRET='string of your chocie'
